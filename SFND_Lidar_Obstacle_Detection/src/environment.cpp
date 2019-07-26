@@ -53,7 +53,11 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr& viewer)
 
     // TODO:: Create point processor
     ProcessPointClouds<pcl::PointXYZ> pointProcessor;
-    std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr> segResult = pointProcessor.SegmentPlane(cloud, 100, 0.2);
+    //std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr> segResult = pointProcessor.SegmentPlane(cloud, 100, 0.2);
+
+    // use own implementation of RANSAC plane segmentation
+    std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr> segResult = pointProcessor.Segment(cloud, 100, 0.2);
+
     renderPointCloud(viewer,segResult.first, "planeCloud", Color(0,1,0));
     renderPointCloud(viewer,segResult.second, "obstCloud", Color(1,0,0));
 

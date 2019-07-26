@@ -253,12 +253,14 @@ int main ()
 	pcl::visualization::PCLVisualizer::Ptr viewer = initScene();
 
 	// Create data
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData();
-	
+	//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData();
+	//IRansacFitObject * obj = new Line();
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData3D();
+	IRansacFitObject * obj = new Plane();
 
 	// TODO: Change the max iteration and distance tolerance arguments for Ransac function
-	IRansacFitObject * obj = new Line();
-	std::unordered_set<int> inliers = Ransac(cloud, *obj, 50, 0.5);
+	std::unordered_set<int> inliers = Ransac(cloud, *obj, 50, 0.2);
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr  cloudInliers(new pcl::PointCloud<pcl::PointXYZ>());
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudOutliers(new pcl::PointCloud<pcl::PointXYZ>());
