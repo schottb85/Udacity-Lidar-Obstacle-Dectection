@@ -2,6 +2,9 @@
 // Create simple 3d highway enviroment using PCL
 // for exploring self-driving car sensors
 
+#include <iterator>
+#include <vector>
+
 #include "sensors/lidar.h"
 #include "render/render.h"
 #include "processPointClouds.h"
@@ -59,8 +62,21 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr& viewer)
     std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr> segResult = pointProcessor.Segment(cloud, 100, 0.2);
 
     renderPointCloud(viewer,segResult.first, "planeCloud", Color(0,1,0));
-    renderPointCloud(viewer,segResult.second, "obstCloud", Color(1,0,0));
+    //renderPointCloud(viewer,segResult.second, "obstCloud", Color(1,0,0));
 
+    int minSize = 3;
+    int maxSize = 30;
+    float clusterTolerance = 1.0; 
+    std::vector<typename pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = pointProcessor.Clustering(segResult.second, clusterTolerance, minSize, maxSize);
+
+    std::vector<Color> clusterColors = { Color(1,1,0), Color(1,0,0), Color(0,0,1)};
+
+    // render clusters
+    for(std::vector<typename pcl::PointCloud<pcl::PointXYZ>::Ptr>::iterator cluster = clusters.begin(); cluster!= clusters.end(); ++cluster){
+        int cloud_id = std::distance(clusters.begin(), cluster);
+        pointProcessor.numPoints(*cluster); // print the number of points
+        renderPointCloud(viewer, *cluster, "obstacle cluster" + std::to_string(cloud_id), clusterColors[cloud_id%clusterColors.size()]);
+    }
 }
 
 

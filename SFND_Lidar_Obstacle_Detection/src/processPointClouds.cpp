@@ -317,6 +317,35 @@ std::vector<typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::C
     std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters;
 
     // TODO:: Fill in the function to perform euclidean clustering to group detected obstacles
+   
+    // create a new KdTree instance
+    typename pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
+    tree->setInputCloud(cloud); // set the original point cloud for clustering
+
+    // vector of PointIncides - each vector entry defines a cluster
+    std::vector<pcl::PointIndices> cluster_indices;
+   
+    // create an instance for extracting euclidean clusters from point cloud
+    pcl::EuclideanClusterExtraction<PointT> ec;
+    ec.setMinClusterSize(minSize); // to distinguish noise from real clusters
+    ec.setMaxClusterSize(maxSize); // for proper separation of clusters, break up large clusters
+    ec.setClusterTolerance(clusterTolerance); // max tolerance for better identifying neighboring points within a cluser
+    ec.setSearchMethod(tree);   // speed up neighbor seach using a kdtree instance based on the same point cloud
+    ec.setInputCloud(cloud); // set the point cloud to the extraction object as well
+    ec.extract(cluster_indices); // fill the vector of cluster_indices from which clusters can be created afterwards
+
+    // fill the clusters based on the grouped indices
+    for(const auto& c_indices : cluster_indices){
+        typename pcl::PointCloud<PointT>::Ptr cluster_point_cloud(new pcl::PointCloud<PointT>);
+        for(const auto & point_cloud_idx : c_indices.indices){
+            cluster_point_cloud->points.push_back(cloud->points[point_cloud_idx]);
+        }
+        cluster_point_cloud->width = cluster_point_cloud->points.size();
+        cluster_point_cloud->height = 1;
+        cluster_point_cloud->is_dense = true;
+
+        clusters.push_back(cluster_point_cloud);
+    }
 
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
