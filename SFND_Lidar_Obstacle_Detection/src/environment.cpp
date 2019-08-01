@@ -37,6 +37,33 @@ std::vector<Car> initHighway(bool renderScene, pcl::visualization::PCLVisualizer
     return cars;
 }
 
+template<typename PointT>
+void SegmentAndClusterCloud(pcl::visualization::PCLVisualizer::Ptr& viewer, typename pcl::PointCloud<PointT>::Ptr cloud , ProcessPointClouds<PointT>& pointProcessor){
+    // use own implementation of RANSAC plane segmentation
+    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult = pointProcessor.SegmentPlane(cloud, 100, 0.2);
+
+    renderPointCloud(viewer,segResult.first, "planeCloud", Color(0,1,0));
+    //renderPointCloud(viewer,segResult.second, "obstCloud", Color(1,0,0));
+
+    int minSize = 3;
+    int maxSize = 2000;
+    float clusterTolerance = 0.4; 
+    std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters = pointProcessor.Clustering(segResult.second, clusterTolerance, minSize, maxSize);
+
+    std::vector<Color> clusterColors = { Color(1,1,0), Color(1,0,0), Color(0,0,1), Color(1,0,1), Color(0,1,1)};
+
+    // render clusters
+    for(typename std::vector<typename pcl::PointCloud<PointT>::Ptr>::iterator cluster = clusters.begin(); cluster!= clusters.end(); ++cluster){
+        int cloud_id = std::distance(clusters.begin(), cluster);
+        pointProcessor.numPoints(*cluster); // print the number of points
+        renderPointCloud(viewer, *cluster, "obstacle cluster" + std::to_string(cloud_id), clusterColors[cloud_id%clusterColors.size()]);
+
+        // create a bounding box and visualize
+        Box box = pointProcessor.BoundingBox(*cluster);
+        renderBox(viewer, box, cloud_id);
+    }
+}
+
 
 void simpleHighway(pcl::visualization::PCLVisualizer::Ptr& viewer)
 {
@@ -58,30 +85,10 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr& viewer)
     ProcessPointClouds<pcl::PointXYZ> pointProcessor;
     //std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr> segResult = pointProcessor.SegmentPlane(cloud, 100, 0.2);
 
-    // use own implementation of RANSAC plane segmentation
-    std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr> segResult = pointProcessor.Segment(cloud, 100, 0.2);
 
-    renderPointCloud(viewer,segResult.first, "planeCloud", Color(0,1,0));
-    //renderPointCloud(viewer,segResult.second, "obstCloud", Color(1,0,0));
+    SegmentAndClusterCloud(viewer, cloud, pointProcessor);
+ }
 
-    int minSize = 3;
-    int maxSize = 30;
-    float clusterTolerance = 1.0; 
-    std::vector<typename pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = pointProcessor.Clustering(segResult.second, clusterTolerance, minSize, maxSize);
-
-    std::vector<Color> clusterColors = { Color(1,1,0), Color(1,0,0), Color(0,0,1)};
-
-    // render clusters
-    for(std::vector<typename pcl::PointCloud<pcl::PointXYZ>::Ptr>::iterator cluster = clusters.begin(); cluster!= clusters.end(); ++cluster){
-        int cloud_id = std::distance(clusters.begin(), cluster);
-        pointProcessor.numPoints(*cluster); // print the number of points
-        renderPointCloud(viewer, *cluster, "obstacle cluster" + std::to_string(cloud_id), clusterColors[cloud_id%clusterColors.size()]);
-
-        // create a bounding box and visualize
-        Box box = pointProcessor.BoundingBox(*cluster);
-        renderBox(viewer, box, cloud_id);
-    }
-}
 
 void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer){
     ProcessPointClouds<pcl::PointXYZI> pointProcessor;
@@ -93,7 +100,9 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer){
     Eigen::Vector4f maxPoint(30,10,5,1);
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr filterCloud = pointProcessor.FilterCloud(inputCloud, filterRes, minPoint, maxPoint);
-    renderPointCloud(viewer, filterCloud, "filterCloud");
+    //renderPointCloud(viewer, filterCloud, "filterCloud");
+
+    SegmentAndClusterCloud(viewer, filterCloud, pointProcessor);
 }
 
 
