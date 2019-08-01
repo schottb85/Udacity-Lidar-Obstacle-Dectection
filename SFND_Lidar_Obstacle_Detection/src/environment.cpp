@@ -56,7 +56,7 @@ void SegmentAndClusterCloud(pcl::visualization::PCLVisualizer::Ptr& viewer, type
     for(typename std::vector<typename pcl::PointCloud<PointT>::Ptr>::iterator cluster = clusters.begin(); cluster!= clusters.end(); ++cluster){
         int cloud_id = std::distance(clusters.begin(), cluster);
         pointProcessor.numPoints(*cluster); // print the number of points
-        renderPointCloud(viewer, *cluster, "obstacle cluster" + std::to_string(cloud_id), clusterColors[cloud_id%clusterColors.size()]);
+        //renderPointCloud(viewer, *cluster, "obstacle cluster" + std::to_string(cloud_id), clusterColors[cloud_id%clusterColors.size()]);
 
         // create a bounding box and visualize
         Box box = pointProcessor.BoundingBox(*cluster);
@@ -142,8 +142,9 @@ int main (int argc, char** argv)
     ProcessPointClouds<pcl::PointXYZI> pointProcessor;
     pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloud;
     //inputCloud = pointProcessor.loadPcd("../src/sensors/data/pcd/data_1/0000000000.pcd");
-    
-    std::vector<boost::filesystem::path> stream = pointProcessor.streamPcd("../src/sensors/data/pcd/data_1");
+
+    //std::vector<boost::filesystem::path> stream = pointProcessor.streamPcd("../src/sensors/data/pcd/data_1");
+    std::vector<boost::filesystem::path> stream = pointProcessor.streamPcd("../src/sensors/data/pcd/data_2");
     auto streamIterator = stream.begin();
 
     while (!viewer->wasStopped ())
@@ -155,6 +156,7 @@ int main (int argc, char** argv)
         // load pcd and run obstacle detection
         inputCloud = pointProcessor.loadPcd(streamIterator->string());
         cityBlock(viewer, inputCloud, pointProcessor);
+        renderPointCloud(viewer, inputCloud, "inputCloud");
 
         viewer->spinOnce ();
 
