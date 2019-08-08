@@ -40,7 +40,8 @@ std::vector<Car> initHighway(bool renderScene, pcl::visualization::PCLVisualizer
 template<typename PointT>
 void SegmentAndClusterCloud(pcl::visualization::PCLVisualizer::Ptr& viewer, typename pcl::PointCloud<PointT>::Ptr cloud , ProcessPointClouds<PointT>& pointProcessor){
     // use own implementation of RANSAC plane segmentation
-    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult = pointProcessor.SegmentPlane(cloud, 100, 0.2);
+    //std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult = pointProcessor.SegmentPlane(cloud, 100, 0.2);
+    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult = pointProcessor.SegmentOwn(cloud, 100, 0.2);
 
     renderPointCloud(viewer,segResult.first, "planeCloud", Color(0,1,0));
     //renderPointCloud(viewer,segResult.second, "obstCloud", Color(1,0,0));
@@ -48,7 +49,8 @@ void SegmentAndClusterCloud(pcl::visualization::PCLVisualizer::Ptr& viewer, type
     int minSize = 3;
     int maxSize = 2000;
     float clusterTolerance = 0.4; 
-    std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters = pointProcessor.Clustering(segResult.second, clusterTolerance, minSize, maxSize);
+    //std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters = pointProcessor.Clustering(segResult.second, clusterTolerance, minSize, maxSize);
+    std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters = pointProcessor.ClusteringOwn(segResult.second, clusterTolerance, minSize, maxSize);
 
     std::vector<Color> clusterColors = { Color(1,1,0), Color(1,0,0), Color(0,0,1), Color(1,0,1), Color(0,1,1)};
 
@@ -143,8 +145,8 @@ int main (int argc, char** argv)
     pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloud;
     //inputCloud = pointProcessor.loadPcd("../src/sensors/data/pcd/data_1/0000000000.pcd");
 
-    //std::vector<boost::filesystem::path> stream = pointProcessor.streamPcd("../src/sensors/data/pcd/data_1");
-    std::vector<boost::filesystem::path> stream = pointProcessor.streamPcd("../src/sensors/data/pcd/data_2");
+    std::vector<boost::filesystem::path> stream = pointProcessor.streamPcd("../src/sensors/data/pcd/data_1");
+    //std::vector<boost::filesystem::path> stream = pointProcessor.streamPcd("../src/sensors/data/pcd/data_2");
     auto streamIterator = stream.begin();
 
     while (!viewer->wasStopped ())
