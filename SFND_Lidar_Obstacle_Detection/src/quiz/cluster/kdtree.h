@@ -62,7 +62,7 @@ struct KdTree
 		insertHelperRecursive(&root, 0, point, id);
 	}
 
-	float euclideanDistanceSquaredBetween(const std::vector<float> source, const std::vector<float> target){
+	float euclideanDistanceSquaredBetween(const std::vector<float>& source, const std::vector<float>& target){
 		if(source.size() != target.size()){
 			throw std::runtime_error("source and target point dimensions are not equal!");
 		}
@@ -74,7 +74,7 @@ struct KdTree
 		return distance;
 	}
 
-	float euclideanDistanceBetween(const std::vector<float> source, const std::vector<float> target){
+	float euclideanDistanceBetween(const std::vector<float>& source, const std::vector<float>& target){
 		return sqrt(euclideanDistanceSquaredBetween(source, target));
 	}
 
@@ -111,17 +111,12 @@ struct KdTree
 		float _distanceTol;
 	};
 
-	// inherit from base class for AABB and HalfSpace, expose leftmost, rightmost, upmost, downmost limits
-	/*class HalfSpace{
-		
-	}*/
-
 	// the fundamental idea to speed up search is to find halfspaces which can be neglected, since it is not
 	// possible that they contain any points which are closer than distanceTol
 	// -> since a hypersphere is not represented by a finite number of limiting corners,
 	// we speed up this by using axis-aligned bounding-box overlap checks. If a bbox will contain the point, then it
 	// is worth to compute the exact euclidean distance for an exact check
-	void searchHelperRecursive(std::vector<int> & ids, Node* node, const std::vector<float>target, float distanceTol, AxisAlignedBoundingBox& bbox){
+	void searchHelperRecursive(std::vector<int> & ids, Node* node, const std::vector<float>& target, float distanceTol, AxisAlignedBoundingBox& bbox){
 		if(node == NULL){
 			return;
 		}

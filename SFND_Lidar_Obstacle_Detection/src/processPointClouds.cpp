@@ -278,26 +278,26 @@ std::vector<typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::C
 
     std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters;
 
-    // TODO:: Fill in the function to perform euclidean clustering to group detected obstacles
+    // the function to perform euclidean clustering to group detected obstacles
 	std::vector<std::vector<float>> cloud_points;
 
 	for(const auto& point : cloud->points){
-		std::vector<float> coords{point.x, point.y, point.z};
-		cloud_points.push_back(coords);
+		cloud_points.push_back(std::vector<float> {point.x, point.y, point.z});
 	}
    
     // create a new KdTree instance
-	KdTree* tree = new KdTree();
+	auto tree = std::make_shared<KdTree>();
   
-    for (int i=0; i<cloud_points.size(); i++){
+    for (int i=0; i<cloud_points.size(); ++i){
     	tree->insert(cloud_points[i],i);
 	}
 
-  	std::vector<std::vector<int>> cluster_indices = euclideanCluster(cloud_points, tree, clusterTolerance, minSize, maxSize);
+  	std::vector<std::vector<int>> cluster_indices = euclideanCluster(cloud_points, &*tree, clusterTolerance, minSize, maxSize);
 
     // fill the clusters based on the grouped indices
     for(const auto& c_indices : cluster_indices){
         typename pcl::PointCloud<PointT>::Ptr cluster_point_cloud(new pcl::PointCloud<PointT>);
+		cluster_point_cloud->points.reserve(c_indices.size());
         for(const auto & point_cloud_idx : c_indices){
             cluster_point_cloud->points.push_back(cloud->points[point_cloud_idx]);
         }
@@ -311,8 +311,6 @@ std::vector<typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::C
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
     std::cout << "clustering took " << elapsedTime.count() << " milliseconds and found " << clusters.size() << " clusters" << std::endl;
-
-	delete tree;
 
     return clusters;
 }

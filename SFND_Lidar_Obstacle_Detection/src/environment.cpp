@@ -46,18 +46,19 @@ void SegmentAndClusterCloud(pcl::visualization::PCLVisualizer::Ptr& viewer, type
     renderPointCloud(viewer,segResult.first, "planeCloud", Color(0,1,0));
     //renderPointCloud(viewer,segResult.second, "obstCloud", Color(1,0,0));
 
-    int minSize = 3;
-    int maxSize = 2000;
-    float clusterTolerance = 0.4; 
-    //std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters = pointProcessor.Clustering(segResult.second, clusterTolerance, minSize, maxSize);
-    std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters = pointProcessor.ClusteringOwn(segResult.second, clusterTolerance, minSize, maxSize);
+    int minSize = 3; // minimum size of a cluster
+    int maxSize = 2000; // maximum size of a cluster
+    float clusterTolerance = 0.4; // distance tolerance between points for being associated to the same cluster
+
+    // do the clustering
+    std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters = pointProcessor.ClusteringOwn(segResult.second, clusterTolerance, minSize, maxSize); // orig: Clustering
 
     std::vector<Color> clusterColors = { Color(1,1,0), Color(1,0,0), Color(0,0,1), Color(1,0,1), Color(0,1,1)};
 
     // render clusters
     for(typename std::vector<typename pcl::PointCloud<PointT>::Ptr>::iterator cluster = clusters.begin(); cluster!= clusters.end(); ++cluster){
         int cloud_id = std::distance(clusters.begin(), cluster);
-        pointProcessor.numPoints(*cluster); // print the number of points
+        //pointProcessor.numPoints(*cluster); // print the number of points
         //renderPointCloud(viewer, *cluster, "obstacle cluster" + std::to_string(cloud_id), clusterColors[cloud_id%clusterColors.size()]);
 
         // create a bounding box and visualize
@@ -94,9 +95,9 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr& viewer)
 template<typename PointT>
 void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer, const typename pcl::PointCloud<PointT>::Ptr& inputCloud, ProcessPointClouds<PointT>& pointProcessor, bool renderFullInputCloud)
 {
-    float filterRes = 0.2; // in meters
-    Eigen::Vector4f minPoint(-10,-10,-3,1);
-    Eigen::Vector4f maxPoint(30,10,5,1);
+    float filterRes = 0.2; // in meters, for voxel-grid downsampling 
+    Eigen::Vector4f minPoint(-10,-10,-3,1); // box filter, corner point with minimal coordinates
+    Eigen::Vector4f maxPoint(30,10,5,1); // box filter, corner point with maximum coordinates
 
     typename pcl::PointCloud<PointT>::Ptr filterCloud = pointProcessor.FilterCloud(inputCloud, filterRes, minPoint, maxPoint);
     
