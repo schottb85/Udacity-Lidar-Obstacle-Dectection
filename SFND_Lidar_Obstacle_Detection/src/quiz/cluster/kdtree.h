@@ -16,6 +16,11 @@ struct Node
 	Node(std::vector<float> arr, int setId, int dimension)
 	:	point(arr), id(setId), left(NULL), right(NULL), dimension(dimension)
 	{}
+
+	~Node(){
+		delete left;
+		delete right;
+	}
 };
 
 struct KdTree
@@ -25,6 +30,10 @@ struct KdTree
 	KdTree()
 	: root(NULL)
 	{}
+
+	~KdTree(){
+		delete root;
+	}
 
 	void insertHelperRecursive(Node** node, uint depth, const std::vector<float>& point, int id){
 		//TODO: fill this function
@@ -53,7 +62,7 @@ struct KdTree
 		insertHelperRecursive(&root, 0, point, id);
 	}
 
-	float euclideanDistanceBetween(const std::vector<float> source, const std::vector<float> target){
+	float euclideanDistanceSquaredBetween(const std::vector<float> source, const std::vector<float> target){
 		if(source.size() != target.size()){
 			throw std::runtime_error("source and target point dimensions are not equal!");
 		}
@@ -62,8 +71,11 @@ struct KdTree
 		{
 			distance += (target[idim] - source[idim])*(target[idim] - source[idim]);
 		}
-		distance = sqrt(distance);
 		return distance;
+	}
+
+	float euclideanDistanceBetween(const std::vector<float> source, const std::vector<float> target){
+		return sqrt(euclideanDistanceSquaredBetween(source, target));
 	}
 
 	// \todo: improvement: use tolerances when split point exactly matches limits of bounding box
@@ -73,10 +85,10 @@ struct KdTree
 
 		bool intersectsHalfspace(int idim, float splitValue, bool left){
 			if(left){
-				_center[idim]-_distanceTol - 1e-14< splitValue ? true : false;
+				return (_center[idim]-_distanceTol - 1e-4< splitValue) ? true : false;
 			}
 			else{
-				_center[idim]+_distanceTol + 1e-14> splitValue ? true : false;
+				return (_center[idim]+_distanceTol + 1e-4> splitValue) ? true : false;
 			}
 		}
 
@@ -109,33 +121,31 @@ struct KdTree
 	// -> since a hypersphere is not represented by a finite number of limiting corners,
 	// we speed up this by using axis-aligned bounding-box overlap checks. If a bbox will contain the point, then it
 	// is worth to compute the exact euclidean distance for an exact check
-	void searchHelperRecursive(std::vector<int> & ids, Node** node, const std::vector<float>target, float distanceTol){
-		if(!(*node)){
+	void searchHelperRecursive(std::vector<int> & ids, Node* node, const std::vector<float>target, float distanceTol, AxisAlignedBoundingBox& bbox){
+		if(node == NULL){
 			return;
 		}
 
 		// check if bounding box around target intersects with half space in node's split direction
-		AxisAlignedBoundingBox bbox(target, distanceTol);
-
 		// if node is within the bounding box, do the exact euclidean distance computation
-		if(bbox.contains((*node)->point)){
+		if(bbox.contains(node->point)){
 			// compute the distance of the current node to the target based on sqrt
-			if(euclideanDistanceBetween(bbox.center(), (*node)->point)< distanceTol){
-				ids.push_back((*node)->id); // the current point lies within the distance
+			if(euclideanDistanceSquaredBetween(bbox.center(), node->point)< distanceTol*distanceTol){
+				ids.push_back(node->id); // the current point lies within the distance
 			}	
 		}
 
 		// decide if to search left or/and right leaf for potential points within hypersphere
 		// to speed up, we kick off irrelevant halfspaces based on cheaper bounding box checks
-		int splitDimension = (*node)->dimension;
-		bool search_left = bbox.intersectsHalfspace(splitDimension, (*node)->point[splitDimension], true);
-		bool search_right = bbox.intersectsHalfspace(splitDimension, (*node)->point[splitDimension], false);
+		int splitDimension = node->dimension;
+		bool search_left = bbox.intersectsHalfspace(splitDimension, node->point[splitDimension], true);
+		bool search_right = bbox.intersectsHalfspace(splitDimension, node->point[splitDimension], false);
 
 		if(search_left){
-			searchHelperRecursive(ids, &(*node)->left, target, distanceTol);
+			searchHelperRecursive(ids, node->left, target, distanceTol, bbox);
 		}
 		if(search_right){
-			searchHelperRecursive(ids, &(*node)->right, target, distanceTol);
+			searchHelperRecursive(ids, node->right, target, distanceTol, bbox);
 		}
 	}
 
@@ -149,7 +159,9 @@ struct KdTree
 		// -> in case that an intersection target point bounding box with the splitregion is found -> seach in the respective leaf
 		// -> in case that the split line crosses the bounding box -> search in both leafs
 		// -> in case that the current node lies within the targets bounding box -> do the actual check based on euclidean distance
-		searchHelperRecursive(ids, &root, target, distanceTol);
+		AxisAlignedBoundingBox bbox(target, distanceTol);
+
+		searchHelperRecursive(ids, root, target, distanceTol, bbox);
 
 		return ids;
 	}

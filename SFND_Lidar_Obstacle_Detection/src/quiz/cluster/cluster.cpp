@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_set>
 #include "kdtree.h"
+#include "cluster.h"
 
 // Arguments:
 // window is the region to draw box around
@@ -76,44 +77,6 @@ void render2DTree(Node* node, pcl::visualization::PCLVisualizer::Ptr& viewer, Bo
 
 }
 
-// return when no further unprocessed nearby points are remaining
-void proximity(int point_index, KdTree* tree, float distanceTol, std::vector<int>& cluster, std::unordered_set<int>& processed_points, const std::vector<std::vector<float>>& points){
-	cluster.push_back(point_index); // add point to cluster
-	processed_points.insert(point_index); // mark point as processed
-
-	std::vector<int> nearby_points = tree->search(points[point_index], distanceTol);
-
-	for(auto near_point : nearby_points){
-		if(processed_points.count(near_point) > 0){
-			continue; // point already processed
-		}
-		proximity(near_point, tree, distanceTol, cluster, processed_points, points);
-	}
-}
-
-std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<float>>& points, KdTree* tree, float distanceTol)
-{
-	std::vector<std::vector<int>> clusters;
-
-	std::unordered_set<int> processed_points;
-
-	for(int point_index = 0; point_index<points.size(); ++point_index){
-		if(processed_points.count(point_index) > 0){
-			continue; // point already processed
-		}
-
-		// create new cluster and mark point as processed
-		std::vector<int> cluster;
-			
-		// search for all points in the proximity of the start point recursively
-		proximity(point_index, tree, distanceTol, cluster, processed_points, points);
-
-		// add new cluster to list of clusters
-		clusters.push_back(cluster);	
-	}
- 
-	return clusters;
-}
 
 int main ()
 {
@@ -149,9 +112,9 @@ int main ()
 
   	// Time segmentation process
   	auto startTime = std::chrono::steady_clock::now();
-  	//
-  	std::vector<std::vector<int>> clusters = euclideanCluster(points, tree, 3.0);
-  	//
+
+  	std::vector<std::vector<int>> clusters = euclideanCluster(points, tree, 3.0, 1, 10000000);
+
   	auto endTime = std::chrono::steady_clock::now();
   	auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
   	std::cout << "clustering found " << clusters.size() << " and took " << elapsedTime.count() << " milliseconds" << std::endl;
@@ -162,17 +125,21 @@ int main ()
   	for(std::vector<int> cluster : clusters)
   	{
   		pcl::PointCloud<pcl::PointXYZ>::Ptr clusterCloud(new pcl::PointCloud<pcl::PointXYZ>());
-  		for(int indice: cluster)
+  		for(int indice: cluster){
   			clusterCloud->points.push_back(pcl::PointXYZ(points[indice][0],points[indice][1],0));
+		}
+
   		renderPointCloud(viewer, clusterCloud,"cluster"+std::to_string(clusterId),colors[clusterId%3]);
   		++clusterId;
   	}
-  	if(clusters.size()==0)
+  	if(clusters.size()==0){
   		renderPointCloud(viewer,cloud,"data");
+	}
 	
   	while (!viewer->wasStopped ())
   	{
   	  viewer->spinOnce ();
   	}
   	
+    delete tree;
 }
