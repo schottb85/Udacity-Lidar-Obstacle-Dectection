@@ -36,9 +36,10 @@ public:
     std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> SeparateClouds(pcl::PointIndices::Ptr inliers, typename pcl::PointCloud<PointT>::Ptr cloud);
 
     std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> SegmentPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceThreshold);
-    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> Segment(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceThreshold);
+    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> SegmentOwn(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceThreshold);
 
     std::vector<typename pcl::PointCloud<PointT>::Ptr> Clustering(typename pcl::PointCloud<PointT>::Ptr cloud, float clusterTolerance, int minSize, int maxSize);
+    std::vector<typename pcl::PointCloud<PointT>::Ptr> ClusteringOwn(typename pcl::PointCloud<PointT>::Ptr cloud, float clusterTolerance, int minSize, int maxSize);
 
     Box BoundingBox(typename pcl::PointCloud<PointT>::Ptr cluster);
 
@@ -104,14 +105,10 @@ class Line : public RansacFitObjectBase<PointT>{
 
 	float distanceTo(PointT other) override
 	{
-		float distance = 0.0;
  		// Point (x,y)(x,y)(x,y)
  		// Distance d=∣Ax+By+C∣/sqrt(A2+B2)d = |Ax+By+C|/sqrt(A^2+B^2)d=∣Ax+By+C∣/sqrt(A2+B2)
-
-		distance = fabs(_A * other.x + _B * other.y + _C);
-		distance/= sqrt(_A*_A + _B*_B);
-		// \todo: performance improvement possible by normalizing coefficients A,B with 1/C
-		return distance;
+        // note: for performance aspects, the coefficients are normalized
+		return fabs(_A * other.x + _B * other.y + _C);
 	}
 	
 	private:
@@ -122,15 +119,21 @@ class Line : public RansacFitObjectBase<PointT>{
 		_A = p1.y - p2.y;
 		_B = p2.x - p1.x;
 		_C = p1.x*p2.y - p2.x*p1.y;
+
+        // normalize coefficients for performance reasons (last coefficient is always 1 by default)
+        float distance = sqrt(_A*_A + _B*_B);
+        _A /= distance;
+        _B /= distance;
+        _C /= distance;
 	}
 };
 
 template<typename PointT>
 class Plane : public RansacFitObjectBase<PointT>{
-	float _A; ///< line coefficient x
-	float _B; ///< line coefficient y
-	float _C; ///< line coefficient z
-	float _D; ///< line coefficient constant
+	float _A; ///< plane coefficient x
+	float _B; ///< plane coefficient y
+	float _C; ///< plane coefficient z
+	float _D; ///< plane coefficient constant
 
 	public:
 	/// ctor
@@ -154,13 +157,9 @@ class Plane : public RansacFitObjectBase<PointT>{
 
 	float distanceTo(PointT other) override
 	{
-		float distance = 0.0;
 		// d=∣A∗x+B∗y+C∗z+D∣/sqrt(A2+B2+C2).
-
-		distance = fabs(_A * other.x + _B * other.y + _C * other.z + _D);
-		distance/= sqrt(_A*_A + _B*_B + _C*_C);
-		// \todo: performance improvement possible by normalizing coefficients A,B,C with 1/D
-		return distance;
+		// note: performance improvement possible by normalizing coefficients A,B,C with 1/D
+		return fabs(_A * other.x + _B * other.y + _C * other.z + _D);
 	}
 	
 	private:
@@ -179,6 +178,12 @@ class Plane : public RansacFitObjectBase<PointT>{
 		_B = j;
 		_C = k;
 		_D = -1.*(i*p1.x + j*p1.y + k*p1.z);
+
+		float distance = sqrt(_A*_A + _B*_B + _C*_C);
+        _A /= distance;
+        _B /= distance;
+        _C /= distance;
+        _D /= distance;
 	}
 };
 
