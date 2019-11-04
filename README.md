@@ -1,9 +1,8 @@
 # Udacity-Lidar-Obstacle-Dectection
 
-# Sensor Fusion Nanodegree Lidar Obstacle Detection
-update->
-<img src="https://github.com/schottb85/Udacity-Lidar-Obstacle-Detection/SFND_Lidar_Obstacle_Detection/2019-11-04_19h36_43.png" width="700" height="400" />
-<img src="https://github.com/schottb85/Udacity-Lidar-Obstacle-Detection/SFND_Lidar_Obstacle_Detection/2019-11-04_19h37_45.png" width="700" height="400" />
+<img src="https://github.com/schottb85/Udacity-Lidar-Obstacle-Dectection/blob/master/2019-11-04_19h36_43.png" width="700" height="400" />
+
+<img src="https://github.com/schottb85/Udacity-Lidar-Obstacle-Dectection/blob/master/2019-11-04_19h37_05.png" width="700" height="400" />
 
 ### Welcome to this Lidar obstacle detection project.
 
