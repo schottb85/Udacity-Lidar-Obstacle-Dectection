@@ -30,25 +30,29 @@ The different algorithms are combined and applied to realistic real-world point 
 
 To work best on a windows machine, we recommend to use the _windows subsystem for linux_ (WSL)
 
-Install PCL
+#### Install PCL
 
 * _sudo apt-get install ..._
 
-* 
+* `sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl`
 
-Clone repository
+* `sudo apt-get update`
 
-Build project
+* `sudo apt-get install libpcl-all`
+
+#### Clone repository
+
+#### Build project
 
 * `mkdir build && cd build`
 
 * `cmake ..`
 
-* `make -j5``
+* `make -j5`
 
 where the number specifies the number of cores for compiling the project
 
-Install xming (optional)
+#### Install xming (optional)
 
 For showing graphical content within the WSL environment, on windows side a listener needs to be installed and started
 
@@ -63,7 +67,7 @@ For showing graphical content within the WSL environment, on windows side a list
 Export DISPLAY settings
 
 
-Coding with VSCode within WSL (remote)
+#### Coding with VSCode within WSL (remote)
 
 `code .` will open visual studio
 
@@ -71,6 +75,8 @@ Install plugins for 'CMake' and C++ coding
 
 Install PCL, C++
 
+
+### Helpful links
 The link here is very helpful, 
 https://larrylisky.com/2014/03/03/installing-pcl-on-ubuntu/
 
